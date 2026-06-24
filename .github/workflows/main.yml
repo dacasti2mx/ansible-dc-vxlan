@@ -140,6 +140,54 @@ jobs:
         run: ansible-test sanity --docker -v --color --truncate 0 --coverage
         working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/nac_dc_vxlan
 
+  ansible_units:
+    name: Units (${{ matrix.python_version }}/Ⓐ${{ matrix.ansible_version }})
+    needs:
+      - collection_build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Representative subset (newest supported Python per Ansible version).
+        # Expand as the unit-test suite grows.
+        include:
+          # Ansible 2.18: supports Python 3.11 - 3.13
+          - ansible_version: "stable-2.18"
+            python_version: "3.13"
+
+          # Ansible 2.17: supports Python 3.7 - 3.12
+          - ansible_version: "stable-2.17"
+            python_version: "3.12"
+
+          # Ansible 2.16: supports Python 3.10 - 3.12
+          - ansible_version: "stable-2.16"
+            python_version: "3.12"
+
+          # Ansible 2.15: supports Python 3.9 - 3.11
+          - ansible_version: "stable-2.15"
+            python_version: "3.11"
+    steps:
+      - name: Set up Python ${{ matrix.python_version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python_version }}
+
+      - name: Install ansible-core (${{ matrix.ansible_version }})
+        run: pip install https://github.com/ansible/ansible/archive/${{ matrix.ansible_version }}.tar.gz --disable-pip-version-check
+
+      - name: Download migrated collection artifacts
+        uses: actions/download-artifact@v5
+        with:
+          name: collection-${{ matrix.python_version }}-${{ matrix.ansible_version }}
+          path: .cache/collection-tarballs
+
+      - name: Install the collection tarball
+        run: ansible-galaxy collection install .cache/collection-tarballs/*.tar.gz
+
+      - name: Run unit tests
+        run: ansible-test units --docker -v --color --truncate 0 --coverage
+        working-directory: /home/runner/.ansible/collections/ansible_collections/cisco/nac_dc_vxlan
+
   ansible_lint:
     name: Ansible-Lint (${{ matrix.python_version }}/Ⓐ${{ matrix.ansible_version }})
     needs:

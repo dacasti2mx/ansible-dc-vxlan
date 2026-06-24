@@ -1,0 +1,3 @@
+# Unit-test dependencies for `ansible-test units`.
+# The current suite uses only the Python stdlib (unittest.mock); pytest itself
+# is provided by ansible-test. Add third-party test deps here as the suite grows.
